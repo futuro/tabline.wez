@@ -2,54 +2,19 @@ local wezterm = require('wezterm')
 
 local M = {}
 
---- Checks if the user is on windows
-local is_windows = string.match(wezterm.target_triple, 'windows') ~= nil
-local separator = is_windows and '\\' or '/'
-
-local plugin_dir = wezterm.plugin.list()[1].plugin_dir:gsub(separator .. '[^' .. separator .. ']*$', '')
-
---- Checks if the plugin directory exists
-local function directory_exists(path)
-  local success, result = pcall(wezterm.read_dir, plugin_dir .. path)
-  return success and result
-end
-
---- Returns the name of the package, used when requiring modules
-local function get_require_path()
-  -- HTTPS version
-  local https_path = 'httpssCssZssZsgithubsDscomsZsmichaelbrusegardsZstablinesDswez'
-  local https_path_slash = 'httpssCssZssZsgithubsDscomsZsmichaelbrusegardsZstablinesDswezsZs'
-  -- HTTP version (without the 's' in https)
-  local http_path = 'httpCssZssZsgithubsDscomsZsmichaelbrusegardsZstablinesDswez'
-  local http_path_slash = 'httpCssZssZsgithubsDscomsZsmichaelbrusegardsZstablinesDswezsZs'
-
-  -- Check all possible paths
-  if directory_exists(https_path_slash) then
-    return https_path_slash
-  end
-  if directory_exists(https_path) then
-    return https_path
-  end
-  if directory_exists(http_path_slash) then
-    return http_path_slash
-  end
-  if directory_exists(http_path) then
-    return http_path
-  end
-
-  -- Default fallback
-  return https_path
+local function findPluginPackagePath()
+   local separator = package.config:sub(1, 1) == '\\' and '\\' or '/'
+   for _, v in ipairs(wezterm.plugin.list()) do
+      if string.match(v.url, 'tabline') then
+         return v.plugin_dir .. separator .. 'plugin' .. separator .. '?.lua'
+      end
+   end
+   --- #TODO Add error fail here
 end
 
 package.path = package.path
-  .. ';'
-  .. plugin_dir
-  .. separator
-  .. get_require_path()
-  .. separator
-  .. 'plugin'
-  .. separator
-  .. '?.lua'
+   .. ';'
+   .. findPluginPackagePath()
 
 function M.setup(opts)
   require('tabline.config').set(opts)
